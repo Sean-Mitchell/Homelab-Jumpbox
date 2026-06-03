@@ -64,7 +64,13 @@ Vagrant.configure("2") do |config|
   
     # Customize the amount of memory on the VM:
     vb.memory = "8192"
-    vb.cpus = 10
+    vb.cpus = 6
+  end
+
+  # https://developer.hashicorp.com/vagrant/docs/provisioning/ansible_local
+  # Provisioning configuration for Ansible directly on the guest machine instead of requiring ansible installed on my host
+  config.vm.provision "ansible_local" do |ansible|
+    ansible.playbook = "AnsiblePlaybook.yml"
   end
   #
   # View the documentation for the provider you are using for more

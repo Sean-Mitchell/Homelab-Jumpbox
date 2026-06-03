@@ -10,7 +10,7 @@ That way the host doesn't get cluttered wtih tests
 1. Run `vagrant init bento/ubuntu-24.04`
 1. Modify the output Vagrantfile to have 
     - 8GB of RAM
-    - 10 CPU cores
+    - 6 CPU cores
     - 40GB Primary disk
     - inits with a GUI
     - custom name of `Homelab-test`
@@ -18,3 +18,12 @@ That way the host doesn't get cluttered wtih tests
     - Provisioner will get auto downloaded
     - The `/Vagrant/` folder should get mounted as the default shared drive
 1. When done run `vagrant destroy -f` to destroy the VM
+
+# Acknowledgements
+## Jeff Geerling
+Snippets taken from [ansible-for-devops](https://github.com/geerlingguy/ansible-for-devops/) repo and youtube series.
+
+## Jim's Garage
+Secrets management and command examples taken from [this video](https://youtu.be/DoiBm5VC-oo)
+
+## GenAI cause it's a great rubber ducky
