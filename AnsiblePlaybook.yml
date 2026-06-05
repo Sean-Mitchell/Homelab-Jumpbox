@@ -1,0 +1,88 @@
+---
+- name: Primary provisioning
+- hosts: all
+  become: true
+
+
+  vars:
+    operating_system: Ubuntu-24.04-amd64
+
+    veracrypt_public_key: 5069A233D55A0EEB174A5FC3821ACD02680D16DE
+
+    veracrypt_version: "1.26.24"
+    veracrypt_deb: "veracrypt-{{ veracrypt_version }}-{{ operating_system }}.deb"
+    veracrypt_sig: "veracrypt-{{ veracrypt_version }}-{{ operating_system }}.deb.sig"
+
+    veracrypt_url: "https://launchpad.net/veracrypt/trunk/{{ veracrypt_version }}/+download/{{ veracrypt_deb }}"
+    veracrypt_sig_url: "https://launchpad.net/veracrypt/trunk/{{ veracrypt_version }}/+download/{{ veracrypt_sig }}"
+
+    veracrypt_sha256: "7c9844771203a6e96f7e4b86b245b85f0d1e45ade70f3f81b1d1b178fc81ca87"
+
+  tasks:
+  - name: Install gnupgp for veracrypt verification
+    apt:
+      name: gnupgp
+      state: present
+      update_cache: true
+      autoclean: true
+
+  - name: Download VeraCrypt {{ veracrypt_version }} package
+    get_url:
+      url: "{{ veracrypt_url }}"
+      dest: "/tmp/{{ veracrypt_deb }}"
+
+  - name: Download VeraCrypt {{ veracrypt_version }} signature
+    get_url:
+      url: "{{ veracrypt_sig_url }}"
+      dest: "/tmp/{{ veracrypt_sig }}"
+
+  - name: Download VeraCrypt public PGP key
+    get_url:
+      url: https://veracrypt.io/VeraCrypt_PGP_public_key.asc
+      dest: /tmp/VeraCrypt_PGP_public_key.asc
+
+  - name: Read key fingerprint without importing
+    command:
+      cmd: >
+        gpg --import --import-options show-only VeraCrypt_PGP_public_key.asc
+    register: gpg_key_info
+    changed_when: false
+
+  - name: Verify VeraCrypt public key fingerprint
+    assert:
+      that:
+        - key_fingerprint == veracrypt_public_key
+      fail_msg: >-
+        Fingerprint mismatch.
+        Expected {{ veracrypt_public_key }}
+        but found {{ key_fingerprint }}
+      success_msg: VeraCrypt public key fingerprint verified.
+
+  - name: Import VeraCrypt public key
+    command:
+      cmd: gpg --import /tmp/VeraCrypt_PGP_public_key.asc
+    when: key_fingerprint == veracrypt_public_key
+
+  - name: Verify VeraCrypt PGP signature
+    command:
+      cmd: >
+        gpg --verify
+        /tmp/{{ veracrypt_sig }}
+        /tmp/{{ veracrypt_deb }}
+    register: gpg_verify
+    changed_when: false
+    
+  - name: Verify VeraCrypt SHA256 checksum
+    stat:
+      path: "/tmp/{{ veracrypt_deb }}"
+      checksum_algorithm: sha256
+      register: veracrypt_stat
+  
+  - name: Fail if checksum does not match
+    fail:
+      msg: "SHA256 mismatch"
+    when: veracrypt_stat.stat.checksum != expected_sha256
+
+  - name: Installing VeraCrypt
+    apt:
+      deb: "/tmp/{{ veracrypt_deb }}"
