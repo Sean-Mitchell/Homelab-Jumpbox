@@ -2,22 +2,31 @@
 - name: Primary provisioning
 - hosts: all
   become: true
-
+  
+  ##################################################################
+  #########################      VARS      #########################
+  ##################################################################
 
   vars:
-    operating_system: Ubuntu-24.04-amd64
+    operating_system: "Ubuntu-24.04-amd64"
 
-    veracrypt_public_key: 5069A233D55A0EEB174A5FC3821ACD02680D16DE
-
+    # Obtained from https://veracrypt.io/en/Digital%20Signatures.html
+    veracrypt_public_key: "5069A233D55A0EEB174A5FC3821ACD02680D16DE"
+    ##################################################################
+    ######################### Veracrypt VARS #########################
+    ##################################################################
+    # Obtained from https://veracrypt.io/en/Downloads.html
     veracrypt_version: "1.26.24"
     veracrypt_deb: "veracrypt-{{ veracrypt_version }}-{{ operating_system }}.deb"
     veracrypt_sig: "veracrypt-{{ veracrypt_version }}-{{ operating_system }}.deb.sig"
-
     veracrypt_url: "https://launchpad.net/veracrypt/trunk/{{ veracrypt_version }}/+download/{{ veracrypt_deb }}"
     veracrypt_sig_url: "https://launchpad.net/veracrypt/trunk/{{ veracrypt_version }}/+download/{{ veracrypt_sig }}"
-
     veracrypt_sha256: "7c9844771203a6e96f7e4b86b245b85f0d1e45ade70f3f81b1d1b178fc81ca87"
+    veracrypt_pgp_public_key_url: "https://veracrypt.io/VeraCrypt_PGP_public_key.asc"
 
+  ##################################################################
+  #########################      TASKS      #########################
+  ##################################################################
   tasks:
   - name: Install gnupgp for veracrypt verification
     apt:
