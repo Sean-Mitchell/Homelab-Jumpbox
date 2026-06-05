@@ -22,7 +22,7 @@
     veracrypt_url: "https://launchpad.net/veracrypt/trunk/{{ veracrypt_version }}/+download/{{ veracrypt_deb }}"
     veracrypt_sig_url: "https://launchpad.net/veracrypt/trunk/{{ veracrypt_version }}/+download/{{ veracrypt_sig }}"
     veracrypt_sha256: "7c9844771203a6e96f7e4b86b245b85f0d1e45ade70f3f81b1d1b178fc81ca87"
-    veracrypt_pgp_public_key_url: "https://veracrypt.io/VeraCrypt_PGP_public_key.asc"
+    veracrypt_pgp_public_key_url: "https://amcrypto.jp/VeraCrypt/VeraCrypt_PGP_public_key.asc"
 
   ##################################################################
   #########################      TASKS      #########################
@@ -47,7 +47,7 @@
 
   - name: Download VeraCrypt public PGP key
     get_url:
-      url: https://veracrypt.io/VeraCrypt_PGP_public_key.asc
+      url: "{{ veracrypt_pgp_public_key_url }}""
       dest: /tmp/VeraCrypt_PGP_public_key.asc
 
   - name: Read key fingerprint without importing
