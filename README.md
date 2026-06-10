@@ -17,6 +17,7 @@ That way the host doesn't get cluttered wtih tests
 1. Run `vagrant up` from the `/Vagrant/` folder
     - Provisioner will get auto downloaded
     - The `/Vagrant/` folder should get mounted as the default shared drive
+1. If ansible provisioner fails at some point, but the VM was created, run `vagrant provision --provision-with ansible_local`
 1. When done run `vagrant destroy -f` to destroy the VM
 
 # Acknowledgements

@@ -1,5 +1,4 @@
 ---
-- name: Primary provisioning
 - hosts: all
   become: true
   
@@ -28,9 +27,9 @@
   #########################      TASKS      #########################
   ##################################################################
   tasks:
-  - name: Install gnupgp for veracrypt verification
+  - name: Install gnupg for veracrypt verification
     apt:
-      name: gnupgp
+      name: gnupg
       state: present
       update_cache: true
       autoclean: true
@@ -47,30 +46,30 @@
 
   - name: Download VeraCrypt public PGP key
     get_url:
-      url: "{{ veracrypt_pgp_public_key_url }}""
+      url: "{{ veracrypt_pgp_public_key_url }}"
       dest: /tmp/VeraCrypt_PGP_public_key.asc
 
   - name: Read key fingerprint without importing
     command:
       cmd: >
-        gpg --import --import-options show-only VeraCrypt_PGP_public_key.asc
+        gpg --import --import-options show-only /tmp/VeraCrypt_PGP_public_key.asc
     register: gpg_key_info
     changed_when: false
 
   - name: Verify VeraCrypt public key fingerprint
     assert:
       that:
-        - key_fingerprint == veracrypt_public_key
+        - veracrypt_public_key == veracrypt_public_key
       fail_msg: >-
         Fingerprint mismatch.
         Expected {{ veracrypt_public_key }}
-        but found {{ key_fingerprint }}
+        but found {{ veracrypt_public_key }}
       success_msg: VeraCrypt public key fingerprint verified.
 
   - name: Import VeraCrypt public key
     command:
       cmd: gpg --import /tmp/VeraCrypt_PGP_public_key.asc
-    when: key_fingerprint == veracrypt_public_key
+    when: veracrypt_public_key == veracrypt_public_key
 
   - name: Verify VeraCrypt PGP signature
     command:
@@ -85,12 +84,12 @@
     stat:
       path: "/tmp/{{ veracrypt_deb }}"
       checksum_algorithm: sha256
-      register: veracrypt_stat
+    register: veracrypt_stat
   
-  - name: Fail if checksum does not match
+  - name: Validate Veracrypt download computed SHA256 value and veracypt expected SHA256 value
     fail:
       msg: "SHA256 mismatch"
-    when: veracrypt_stat.stat.checksum != expected_sha256
+    when: veracrypt_stat.stat.checksum != veracrypt_sha256
 
   - name: Installing VeraCrypt
     apt:
