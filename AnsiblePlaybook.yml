@@ -15,12 +15,12 @@
     ######################### Veracrypt VARS #########################
     ##################################################################
     # Obtained from https://veracrypt.io/en/Downloads.html
-    veracrypt_version: "1.26.24"
+    veracrypt_version: "1.26.29"
     veracrypt_deb: "veracrypt-{{ veracrypt_version }}-{{ operating_system }}.deb"
     veracrypt_sig: "veracrypt-{{ veracrypt_version }}-{{ operating_system }}.deb.sig"
     veracrypt_url: "https://launchpad.net/veracrypt/trunk/{{ veracrypt_version }}/+download/{{ veracrypt_deb }}"
     veracrypt_sig_url: "https://launchpad.net/veracrypt/trunk/{{ veracrypt_version }}/+download/{{ veracrypt_sig }}"
-    veracrypt_sha256: "7c9844771203a6e96f7e4b86b245b85f0d1e45ade70f3f81b1d1b178fc81ca87"
+    veracrypt_sha256: "5688384F062BE97405829EBC193C3BB4B286F1511E5EFC96D7CEAB9679D895BB"
     veracrypt_pgp_public_key_url: "https://amcrypto.jp/VeraCrypt/VeraCrypt_PGP_public_key.asc"
 
 
@@ -50,8 +50,8 @@
     - name: Install gnupg for deb8222 and veracrypt install verification
       ansible.builtin.apt:
         name: 
-          - gnupg
-          - python3-debian 
+          - gnupg # Required for pgp keys
+          - python3-debian # Required for ansible.builtin.deb822_repository to work correctly
         state: present
         update_cache: true
         autoclean: true
@@ -113,8 +113,9 @@
       
       - name: Validate Veracrypt download computed SHA256 value and veracypt expected SHA256 value
         fail:
-          msg: "SHA256 mismatch"
-        when: veracrypt_stat.stat.checksum != veracrypt_sha256
+          msg: "SHA256 mismatch {{ veracrypt_stat }}"
+        # | lower required to make sure the hash checksums are equivalent and there isn't any funky case stuff happening here
+        when: veracrypt_stat.stat.checksum | lower != veracrypt_sha256 | lower 
 
       - name: Installing VeraCrypt
         apt:
