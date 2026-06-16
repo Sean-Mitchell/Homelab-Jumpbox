@@ -23,74 +23,136 @@
     veracrypt_sha256: "7c9844771203a6e96f7e4b86b245b85f0d1e45ade70f3f81b1d1b178fc81ca87"
     veracrypt_pgp_public_key_url: "https://amcrypto.jp/VeraCrypt/VeraCrypt_PGP_public_key.asc"
 
+
   ##################################################################
-  #########################      TASKS      #########################
+  #########################      TASKS      ########################
   ##################################################################
   tasks:
-  - name: Install gnupg for veracrypt verification
-    apt:
-      name: gnupg
-      state: present
-      update_cache: true
-      autoclean: true
+    - name: Perform a dist-upgrade.
+      ansible.builtin.apt:
+        upgrade: dist
+        update_cache: yes
 
-  - name: Download VeraCrypt {{ veracrypt_version }} package
-    get_url:
-      url: "{{ veracrypt_url }}"
-      dest: "/tmp/{{ veracrypt_deb }}"
+    - name: Check if a reboot is required.
+      ansible.builtin.stat:
+        path: /var/run/reboot-required
+        get_checksum: no
+      register: reboot_required_file
 
-  - name: Download VeraCrypt {{ veracrypt_version }} signature
-    get_url:
-      url: "{{ veracrypt_sig_url }}"
-      dest: "/tmp/{{ veracrypt_sig }}"
+    - name: Reboot the server (if required).
+      ansible.builtin.reboot:
+      when: reboot_required_file.stat.exists == true
 
-  - name: Download VeraCrypt public PGP key
-    get_url:
-      url: "{{ veracrypt_pgp_public_key_url }}"
-      dest: /tmp/VeraCrypt_PGP_public_key.asc
+    - name: Remove dependencies that are no longer required.
+      ansible.builtin.apt:
+        autoremove: yes
+      
+    - name: Install gnupg for deb8222 and veracrypt install verification
+      ansible.builtin.apt:
+        name: 
+          - gnupg
+          - python3-debian 
+        state: present
+        update_cache: true
+        autoclean: true
 
-  - name: Read key fingerprint without importing
-    command:
-      cmd: >
-        gpg --import --import-options show-only /tmp/VeraCrypt_PGP_public_key.asc
-    register: gpg_key_info
-    changed_when: false
+    ###############  Veracrypt  ###############
+    - name: Veracrypt Install
+      block:
+      - name: Download VeraCrypt {{ veracrypt_version }} package
+        get_url:
+          url: "{{ veracrypt_url }}"
+          dest: "/tmp/{{ veracrypt_deb }}"
 
-  - name: Verify VeraCrypt public key fingerprint
-    assert:
-      that:
-        - veracrypt_public_key == veracrypt_public_key
-      fail_msg: >-
-        Fingerprint mismatch.
-        Expected {{ veracrypt_public_key }}
-        but found {{ veracrypt_public_key }}
-      success_msg: VeraCrypt public key fingerprint verified.
+      - name: Download VeraCrypt {{ veracrypt_version }} signature
+        get_url:
+          url: "{{ veracrypt_sig_url }}"
+          dest: "/tmp/{{ veracrypt_sig }}"
 
-  - name: Import VeraCrypt public key
-    command:
-      cmd: gpg --import /tmp/VeraCrypt_PGP_public_key.asc
-    when: veracrypt_public_key == veracrypt_public_key
+      - name: Download VeraCrypt public PGP key
+        get_url:
+          url: "{{ veracrypt_pgp_public_key_url }}"
+          dest: /tmp/VeraCrypt_PGP_public_key.asc
 
-  - name: Verify VeraCrypt PGP signature
-    command:
-      cmd: >
-        gpg --verify
-        /tmp/{{ veracrypt_sig }}
-        /tmp/{{ veracrypt_deb }}
-    register: gpg_verify
-    changed_when: false
+      - name: Read key fingerprint without importing
+        command:
+          cmd: >
+            gpg --import --import-options show-only /tmp/VeraCrypt_PGP_public_key.asc
+        register: gpg_key_info
+        changed_when: false
+
+      - name: Verify VeraCrypt public key fingerprint
+        assert:
+          that:
+            - veracrypt_public_key == veracrypt_public_key
+          fail_msg: >-
+            Fingerprint mismatch.
+            Expected {{ veracrypt_public_key }}
+            but found {{ veracrypt_public_key }}
+          success_msg: VeraCrypt public key fingerprint verified.
+
+      - name: Import VeraCrypt public key
+        command:
+          cmd: gpg --import /tmp/VeraCrypt_PGP_public_key.asc
+        when: veracrypt_public_key == veracrypt_public_key
+
+      - name: Verify VeraCrypt PGP signature
+        command:
+          cmd: >
+            gpg --verify
+            /tmp/{{ veracrypt_sig }}
+            /tmp/{{ veracrypt_deb }}
+        register: gpg_verify
+        changed_when: false
+        
+      - name: Verify VeraCrypt SHA256 checksum
+        stat:
+          path: "/tmp/{{ veracrypt_deb }}"
+          checksum_algorithm: sha256
+        register: veracrypt_stat
+      
+      - name: Validate Veracrypt download computed SHA256 value and veracypt expected SHA256 value
+        fail:
+          msg: "SHA256 mismatch"
+        when: veracrypt_stat.stat.checksum != veracrypt_sha256
+
+      - name: Installing VeraCrypt
+        apt:
+          deb: "/tmp/{{ veracrypt_deb }}"
+
+
+    ###############  Veracrypt  ###############
+    - name: Add yubikey PPA
+      block:
+      - name: Fetch Yubico PPA key
+        ansible.builtin.get_url:
+          url: "https://keyserver.ubuntu.com/pks/lookup?op=get&search=0xFA4EC8F2EE58CE0B"
+          dest: /tmp/yubico.asc
+      
+      - name: Convert PPA key to keyring
+        ansible.builtin.command:
+          cmd: >
+            gpg --dearmor
+            --output /usr/share/keyrings/yubico-archive-keyring.gpg
+            /tmp/yubico.asc
+        args:
+          creates: /usr/share/keyrings/yubico-archive-keyring.gpg
     
-  - name: Verify VeraCrypt SHA256 checksum
-    stat:
-      path: "/tmp/{{ veracrypt_deb }}"
-      checksum_algorithm: sha256
-    register: veracrypt_stat
-  
-  - name: Validate Veracrypt download computed SHA256 value and veracypt expected SHA256 value
-    fail:
-      msg: "SHA256 mismatch"
-    when: veracrypt_stat.stat.checksum != veracrypt_sha256
+      - name: Add Yubico repository
+        ansible.builtin.deb822_repository:
+          name: yubico
+          types: [deb]
+          uris:
+            - https://ppa.launchpadcontent.net/yubico/stable/ubuntu
+          suites:
+            - noble
+          components:
+            - main
+          signed_by: /usr/share/keyrings/yubico-archive-keyring.gpg
 
-  - name: Installing VeraCrypt
-    apt:
-      deb: "/tmp/{{ veracrypt_deb }}"
+      - name: Update and install yubikey-manager
+        apt:
+          name: yubikey-manager
+          state: present
+          update_cache: true
+          autoclean: true
