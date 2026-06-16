@@ -16,11 +16,11 @@
     ##################################################################
     # Obtained from https://veracrypt.io/en/Downloads.html
     veracrypt_version: "1.26.29"
-    veracrypt_deb: "veracrypt-{{ veracrypt_version }}-{{ operating_system }}.deb"
-    veracrypt_sig: "veracrypt-{{ veracrypt_version }}-{{ operating_system }}.deb.sig"
+    veracrypt_deb: "veracrypt-console-{{ veracrypt_version }}-{{ operating_system }}.deb"
+    veracrypt_sig: "veracrypt-console-{{ veracrypt_version }}-{{ operating_system }}.deb.sig"
     veracrypt_url: "https://launchpad.net/veracrypt/trunk/{{ veracrypt_version }}/+download/{{ veracrypt_deb }}"
     veracrypt_sig_url: "https://launchpad.net/veracrypt/trunk/{{ veracrypt_version }}/+download/{{ veracrypt_sig }}"
-    veracrypt_sha256: "5688384F062BE97405829EBC193C3BB4B286F1511E5EFC96D7CEAB9679D895BB"
+    veracrypt_sha256: "8592BBB754582CFB9BA265771B8BC0E130B81E91A23141F22CDDF83496063508"
     veracrypt_pgp_public_key_url: "https://amcrypto.jp/VeraCrypt/VeraCrypt_PGP_public_key.asc"
 
 
@@ -39,6 +39,8 @@
         get_checksum: no
       register: reboot_required_file
 
+    # TODO: research reboot  
+    # Breaks due to using the local ansible installer I think
     - name: Reboot the server (if required).
       ansible.builtin.reboot:
       when: reboot_required_file.stat.exists == true
