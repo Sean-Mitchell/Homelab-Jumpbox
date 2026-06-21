@@ -66,24 +66,13 @@ Vagrant.configure("2") do |config|
     vb.memory = "8192"
     vb.cpus = 6
   end
-
-  $script = <<-SCRIPT
-    echo neat && apt update && apt upgrade -y && apt autoremove
-  SCRIPT
   # Runs apt update/upgrade and reboots
   # Runs only when called, and I call this only the first time I call `vagrant up`
-  config.vm.provision "bootstrap", type: "shell", inline:<<-SHELL
-    echo neat
+  config.vm.provision "bootstrap", type: "shell", reboot: true, inline:<<-SHELL
     apt update
     apt upgrade -y
-    apt autoremove
-    echo done
-    if [ -f /var/run/reboot-required ]; then
-      echo 'reboot required'
-      reboot now
-    fi
+    apt autoremove -y
     SHELL
-    
   # https://developer.hashicorp.com/vagrant/docs/provisioning/ansible_local
   # Provisioning configuration for Ansible directly on the guest machine instead of requiring ansible installed on my host
   config.vm.provision "ansible_local", after: "bootstrap" do |ansible|

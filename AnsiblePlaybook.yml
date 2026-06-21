@@ -1,54 +1,14 @@
 ---
 - hosts: all
   become: true
-  
-  ##################################################################
-  #########################      VARS      #########################
-  ##################################################################
 
-  vars:
-    operating_system: "Ubuntu-24.04-amd64"
-
-    # Obtained from https://veracrypt.io/en/Digital%20Signatures.html
-    veracrypt_public_key: "5069A233D55A0EEB174A5FC3821ACD02680D16DE"
-    ##################################################################
-    ######################### Veracrypt VARS #########################
-    ##################################################################
-    # Obtained from https://veracrypt.io/en/Downloads.html
-    veracrypt_version: "1.26.29"
-    veracrypt_deb: "veracrypt-console-{{ veracrypt_version }}-{{ operating_system }}.deb"
-    veracrypt_sig: "veracrypt-console-{{ veracrypt_version }}-{{ operating_system }}.deb.sig"
-    veracrypt_url: "https://launchpad.net/veracrypt/trunk/{{ veracrypt_version }}/+download/{{ veracrypt_deb }}"
-    veracrypt_sig_url: "https://launchpad.net/veracrypt/trunk/{{ veracrypt_version }}/+download/{{ veracrypt_sig }}"
-    veracrypt_sha256: "8592BBB754582CFB9BA265771B8BC0E130B81E91A23141F22CDDF83496063508"
-    veracrypt_pgp_public_key_url: "https://amcrypto.jp/VeraCrypt/VeraCrypt_PGP_public_key.asc"
-
+  vars_files:
+    - vars.yml  
 
   ##################################################################
   #########################      TASKS      ########################
   ##################################################################
   tasks:
-    - name: Perform a dist-upgrade.
-      ansible.builtin.apt:
-        upgrade: dist
-        update_cache: yes
-
-    - name: Check if a reboot is required.
-      ansible.builtin.stat:
-        path: /var/run/reboot-required
-        get_checksum: no
-      register: reboot_required_file
-
-    # TODO: research reboot  
-    # Breaks due to using the local ansible installer I think
-    - name: Reboot the server (if required).
-      ansible.builtin.reboot:
-      when: reboot_required_file.stat.exists == true
-
-    - name: Remove dependencies that are no longer required.
-      ansible.builtin.apt:
-        autoremove: yes
-      
     - name: Install gnupg for deb8222 and veracrypt install verification
       ansible.builtin.apt:
         name: 
