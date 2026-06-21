@@ -14,6 +14,7 @@
         name: 
           - gnupg # Required for pgp keys
           - python3-debian # Required for ansible.builtin.deb822_repository to work correctly
+          - git
         state: present
         update_cache: true
         autoclean: true
@@ -46,7 +47,7 @@
       - name: Verify VeraCrypt public key fingerprint
         assert:
           that:
-            - veracrypt_public_key == veracrypt_public_key
+            - gpg_key_info.stdout_lines[1] | trim == veracrypt_public_key
           fail_msg: >-
             Fingerprint mismatch.
             Expected {{ veracrypt_public_key }}
@@ -56,7 +57,7 @@
       - name: Import VeraCrypt public key
         command:
           cmd: gpg --import /tmp/VeraCrypt_PGP_public_key.asc
-        when: veracrypt_public_key == veracrypt_public_key
+        when: gpg_key_info.stdout_lines[1] | trim == veracrypt_public_key
 
       - name: Verify VeraCrypt PGP signature
         command:
