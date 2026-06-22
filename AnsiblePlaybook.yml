@@ -12,9 +12,10 @@
     - name: Install gnupg for deb8222 and veracrypt install verification
       ansible.builtin.apt:
         name: 
+          - git
           - gnupg # Required for pgp keys
           - python3-debian # Required for ansible.builtin.deb822_repository to work correctly
-          - git
+          - pcscd # Required for yubikey
         state: present
         update_cache: true
         autoclean: true

@@ -62,8 +62,14 @@ Vagrant.configure("2") do |config|
     #vb.gui = true
     vb.name = "Homelab-Deploy-Ubuntu-24.04"
 
-    # Turn on USB 3.0
+    # Turn on USB 3.0 & add yubikey & my own usbs to the filter for auto-connecting
+    # Taken from: https://spin.atomicobject.com/smartcard-virtualbox-vm/
     vb.customize ['modifyvm', :id, '--usb-xhci', 'on']
+    # Yubikey
+    vb.customize ['usbfilter', 'add', '0', '--target', :id, '--name', 'Yubico YubiKey OTP+FIDO+CCID [0574]', '--vendorid', '0x1050', '--productid', '0x0407']
+    # USB Mass Storage
+    vb.customize ['usbfilter', 'add', '0', '--target', :id, '--name', 'USB DISK 3.0 [0110]', '--vendorid', '0x13FE', '--productid', '0x6700']
+
   
     # Customize the amount of memory on the VM:
     vb.memory = "8192"
