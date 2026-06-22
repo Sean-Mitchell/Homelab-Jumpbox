@@ -61,6 +61,9 @@ Vagrant.configure("2") do |config|
     # Display the VirtualBox GUI when booting the machine
     #vb.gui = true
     vb.name = "Homelab-Deploy-Ubuntu-24.04"
+
+    # Turn on USB 3.0
+    vb.customize ['modifyvm', :id, '--usb-xhci', 'on']
   
     # Customize the amount of memory on the VM:
     vb.memory = "8192"
