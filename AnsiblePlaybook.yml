@@ -120,3 +120,9 @@
           state: present
           update_cache: true
           autoclean: true
+      
+    ###############  Homelab Repo Clone  ###############
+    - name: Checkout Homelab Repo
+      ansible.builtin.git:
+        repo: "{{ homelab_repo_url }}"
+        dest: "{{ homelab_repo_destination_path }}"
